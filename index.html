@@ -28,6 +28,42 @@
 
         article {
             font-size: 0.9rem;
+五、字体大小、上下间隔）正常工作。
+- 确保移动端友好的布局和单选按钮的内联显示保持不变。
+
+以下是更新后的 `index.html`，包含上述更改。使用相同的 artifact ID，因为这是对现有 artifact 的更新。
+
+<xaiArtifact artifact_id="c30b0359-3454-4c0a-8e78-268352ddf7f6" artifact_version_id="617819d3-087b-4b5a-8589-d3ffde69cf2b" title="index.html" contentType="text/html">
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+    <title>离线图片水印工具</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+        }
+
+        #container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        #graph {
+            display: grid;
+            grid-gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        p, article {
+            margin: 0 0 1.5rem 0;
+        }
+
+        article {
+            font-size: 0.9rem;
             color: #777;
         }
 
@@ -73,9 +109,10 @@
         }
 
         input[type=color] {
-            width: 50px;
-            height: 30px;
+            width: 30px;
+            height: 20px;
             padding: 0;
+            cursor: pointer;
         }
 
         canvas {
@@ -136,6 +173,11 @@
                 width: 150px;
             }
 
+            input[type=color] {
+                width: 25px;
+                height: 18px;
+            }
+
             button, select, input[type=file], input#text {
                 width: 100%;
                 box-sizing: border-box;
@@ -177,6 +219,11 @@
                 width: 120px;
             }
 
+            input[type=color] {
+                width: 20px;
+                height: 16px;
+            }
+
             canvas {
                 max-width: 100%;
             }
@@ -195,7 +242,7 @@
         <label for="image">第一步：先选择本地图片(可多选)</label>
         <input type="file" id="image" autocomplete="off" multiple>
         <label for="text">第二步：输入需要打水印的文字</label>
-        <input id="text" autocomplete="off" value="这里是水印文字">
+        <input id="text" autocomplete="off">
     </div>
 
     <div class="align-center-box">
@@ -211,22 +258,7 @@
         </div>
 
         <div class="control-group">
-            <label for="bold">加粗</label>
-            <input type="checkbox" id="bold" checked>
-        </div>
-
-        <div class="control-group">
-            <label for="italic">斜体</label>
-            <input type="checkbox" id="italic">
-        </div>
-
-        <div class="control-group">
-            <label for="xx">交错</label>
-            <input type="checkbox" id="xx" checked>
-        </div>
-
-        <div class="control-group">
-            <label for="alpha">不透明度</label>
+            <label for="alpha">透明度</label>
             <input type="range" id="alpha" min="0" max="1" step="0.01" autocomplete="off" value="0.25">
             <label class="label" id="label-alpha"></label>
         </div>
@@ -238,19 +270,7 @@
         </div>
 
         <div class="control-group">
-            <label for="radio">角度</label>
-            <input type="range" id="radio" min="-180" max="180" step="1" autocomplete="off" value="-30">
-            <label class="label" id="label-radio"></label>
-        </div>
-
-        <div class="control-group">
-            <label for="marginHorizon">左右间隔</label>
-            <input type="range" id="marginHorizon" min="-5" max="12" step="0.1" autocomplete="off" value="1.5">
-            <label class="label" id="label-marginHorizon"></label>
-        </div>
-
-        <div class="control-group">
-            <label for="marginVertical">上下间隔</label>
+            <label for="marginVertical">间隔</label>
             <input type="range" id="marginVertical" min="-5" max="12" step="0.1" autocomplete="off" value="1.5">
             <label class="label" id="label-marginVertical"></label>
         </div>
@@ -285,7 +305,7 @@
     <script>
         let canvas;
         let $ = sel => document.querySelector(sel);
-        let inputItems = ['color', 'alpha', "marginHorizon", "marginVertical", 'size', 'radio', "xx", "bold", "italic", "pic-quality"];
+        let inputItems = ['color', 'alpha', 'size', 'marginVertical', 'pic-quality'];
         let configInputSetting = {};
         let allCanvas = [];
 
@@ -299,9 +319,7 @@
             for (i = _i = 0, _ref = len - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
                 arr[i] = binStr.charCodeAt(i);
             }
-            return new Blob([arr], {
-                type: type
-            });
+            return new Blob([arr], { type });
         };
 
         const fontOptions = ["Arial", "Helvetica", "Times New Roman", "Courier New", "Verdana", "Georgia", "Impact", "Tahoma", "Palatino", "Garamond", "Bookman", "Comic Sans MS", "Century Gothic", "Arial Black", "Lucida Console",
@@ -408,23 +426,20 @@
             let textSize = configInputSetting.size.value * Math.max(15, (Math.min(canvas.width, canvas.height)) / 25);
             let textCtx = canvas.getContext('2d');
             textCtx.fillStyle = makeStyle();
+            textCtx.font = textSize + "px " + $("#fontSelect").value;
 
-            textCtx.font = ($("#bold").checked ? "bold " : "") + ($("#italic").checked ? "italic " : "") + textSize + "px " + $("#fontSelect").value;
-
-            let baseWidth = (textCtx.measureText('啊')).width;
-
-            let textWidth = (textCtx.measureText(configInputSetting.text.value)).width;
-            let xAdd = textWidth + configInputSetting.marginHorizon.value * baseWidth;
+            let baseWidth = textCtx.measureText('啊').width;
+            let textWidth = textCtx.measureText(configInputSetting.text.value).width;
+            let xAdd = textWidth + baseWidth;
             let yAdd = textWidth + configInputSetting.marginVertical.value * baseWidth;
             xAdd = Math.max(xAdd, 10);
             yAdd = Math.max(yAdd, 10);
 
             let border = 500;
-            for (let i = -1 * border; i < canvas.width + border; i += xAdd) {
-                for (let j = -1 * border, jj = 0; j < canvas.height + border; j += yAdd, jj++) {
+            for (let i = -border; i < canvas.width + border; i += xAdd) {
+                for (let j = -border; j < canvas.height + border; j += yAdd) {
                     textCtx.save();
-                    textCtx.translate(i + Math.ceil(jj % 2 === 0 ? xAdd / (configInputSetting.xx.checked ? 2 : 1) : 0), j);
-                    textCtx.rotate(configInputSetting.radio.value * Math.PI / 180);
+                    textCtx.translate(i, j);
                     textCtx.fillText(configInputSetting.text.value, 0, 0);
                     textCtx.restore();
                 }
