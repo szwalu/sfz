@@ -73,10 +73,11 @@
         }
 
         input[type=color] {
-            width: 40px; /* Increased from 30px to make color picker wider */
-            height: 20px;
+            width: 40px;
+            height: 40px; /* Set height equal to width for a square base */
             padding: 0;
             cursor: pointer;
+            border-radius: 50%; /* Make it a circle */
         }
 
         select {
@@ -147,8 +148,9 @@
             }
 
             input[type=color] {
-                width: 35px; /* Increased from 30px to make color picker wider on mobile */
-                height: 18px;
+                width: 35px; /* Slightly smaller for mobile but still usable */
+                height: 35px; /* Equal height for circle */
+                border-radius: 50%; /* Ensure it remains a circle */
             }
 
             button, select, input[type=file], input#text {
@@ -198,8 +200,9 @@
             }
 
             input[type=color] {
-                width: 30px; /* Increased from 25px to make color picker wider on smaller screens */
-                height: 16px;
+                width: 30px; /* Adjusted for smaller screens */
+                height: 30px; /* Equal height for circle */
+                border-radius: 50%; /* Ensure it remains a circle */
             }
 
             canvas {
