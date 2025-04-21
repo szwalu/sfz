@@ -28,42 +28,6 @@
 
         article {
             font-size: 0.9rem;
-五、字体大小、上下间隔）正常工作。
-- 确保移动端友好的布局和单选按钮的内联显示保持不变。
-
-以下是更新后的 `index.html`，包含上述更改。使用相同的 artifact ID，因为这是对现有 artifact 的更新。
-
-<xaiArtifact artifact_id="c30b0359-3454-4c0a-8e78-268352ddf7f6" artifact_version_id="617819d3-087b-4b5a-8589-d3ffde69cf2b" title="index.html" contentType="text/html">
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
-    <title>离线图片水印工具</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 10px;
-            font-family: Arial, sans-serif;
-        }
-
-        #container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        #graph {
-            display: grid;
-            grid-gap: 10px;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        }
-
-        p, article {
-            margin: 0 0 1.5rem 0;
-        }
-
-        article {
-            font-size: 0.9rem;
             color: #777;
         }
 
@@ -333,12 +297,11 @@
             selectElement.appendChild(optionElement);
         }
 
-        const redrawCanvas = (canvas, img) => {
-            let w = canvas.width;
-            let h = canvas.height;
-            canvas.width = w;
-            canvas.height = h;
-            canvas.getContext('2d').drawImage(img, 0, 0);
+        const redrawCanvas = (canvas, img, scaledWidth, scaledHeight) => {
+            canvas.width = scaledWidth;
+            canvas.height = scaledHeight;
+            let ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, scaledWidth, scaledHeight);
         };
 
         const downloadCanvasAsImage = (canvas, fileName) => {
@@ -374,14 +337,24 @@
                         img.onload = function () {
                             try {
                                 const canvas = document.createElement('canvas');
-                                canvas.width = img.width;
-                                canvas.height = img.height;
+                                const maxWidth = 600; // Maximum display width
+                                let scaledWidth = img.width;
+                                let scaledHeight = img.height;
+                                
+                                // Scale the image if it's larger than maxWidth
+                                if (img.width > maxWidth) {
+                                    scaledWidth = maxWidth;
+                                    scaledHeight = img.height * (maxWidth / img.width);
+                                }
+
+                                canvas.width = scaledWidth;
+                                canvas.height = scaledHeight;
                                 let ctx = canvas.getContext('2d');
-                                ctx.drawImage(img, 0, 0);
+                                ctx.drawImage(img, 0, 0, scaledWidth, scaledHeight);
 
                                 allCanvas.push({img, canvas, fileName: file.name});
 
-                                drawText(canvas, img);
+                                drawText(canvas, img, scaledWidth, scaledHeight);
                                 graph.appendChild(canvas);
                                 console.log(`Canvas for ${file.name} appended to #graph`);
 
@@ -417,13 +390,13 @@
             return 'rgba(' + (parseInt(match[1], 16)) + ',' + (parseInt(match[2], 16)) + ',' + (parseInt(match[3], 16)) + ',' + configInputSetting.alpha.value + ')';
         };
 
-        const drawText = (canvas, img) => {
-            redrawCanvas(canvas, img);
+        const drawText = (canvas, img, scaledWidth, scaledHeight) => {
+            redrawCanvas(canvas, img, scaledWidth, scaledHeight);
             if (!canvas) {
                 return;
             }
 
-            let textSize = configInputSetting.size.value * Math.max(15, (Math.min(canvas.width, canvas.height)) / 25);
+            let textSize = configInputSetting.size.value * Math.max(15, (Math.min(scaledWidth, scaledHeight)) / 25);
             let textCtx = canvas.getContext('2d');
             textCtx.fillStyle = makeStyle();
             textCtx.font = textSize + "px " + $("#fontSelect").value;
@@ -436,8 +409,8 @@
             yAdd = Math.max(yAdd, 10);
 
             let border = 500;
-            for (let i = -border; i < canvas.width + border; i += xAdd) {
-                for (let j = -border; j < canvas.height + border; j += yAdd) {
+            for (let i = -border; i < scaledWidth + border; i += xAdd) {
+                for (let j = -border; j < scaledHeight + border; j += yAdd) {
                     textCtx.save();
                     textCtx.translate(i, j);
                     textCtx.fillText(configInputSetting.text.value, 0, 0);
@@ -481,12 +454,31 @@
 
         configInputSetting["text"] = $('#text');
         configInputSetting["text"].addEventListener('input', () => {
-            allCanvas.forEach(({canvas, img}) => drawText(canvas, img));
+            allCanvas.forEach(({canvas, img, scaledWidth, scaledHeight}) => {
+                // Recompute scaled dimensions in case they aren't stored
+                const maxWidth = 600;
+                scaledWidth = img.width;
+                scaledHeight = img.height;
+                if (img.width > maxWidth) {
+                    scaledWidth = maxWidth;
+                    scaledHeight = img.height * (maxWidth / img.width);
+                }
+                drawText(canvas, img, scaledWidth, scaledHeight);
+            });
         });
 
         configInputSetting["fontSelect"] = $('#fontSelect');
         configInputSetting["fontSelect"].addEventListener('change', () => {
-            allCanvas.forEach(({canvas, img}) => drawText(canvas, img));
+            allCanvas.forEach(({canvas, img, scaledWidth, scaledHeight}) => {
+                const maxWidth = 600;
+                scaledWidth = img.width;
+                scaledHeight = img.height;
+                if (img.width > maxWidth) {
+                    scaledWidth = maxWidth;
+                    scaledHeight = img.height * (maxWidth / img.width);
+                }
+                drawText(canvas, img, scaledWidth, scaledHeight);
+            });
         });
 
         inputItems.forEach(item => {
@@ -496,8 +488,15 @@
             $(labelDom) ? $(labelDom).innerText = isNaN(el.value) ? el.value : parseFloat(el.value).toFixed(2) : "";
             return el.addEventListener('input', () => {
                 $(labelDom) ? $(labelDom).innerText = isNaN(el.value) ? el.value : parseFloat(el.value).toFixed(2) : "";
-                allCanvas.forEach(({canvas, img}) => {
-                    drawText(canvas, img);
+                allCanvas.forEach(({canvas, img, scaledWidth, scaledHeight}) => {
+                    const maxWidth = 600;
+                    scaledWidth = img.width;
+                    scaledHeight = img.height;
+                    if (img.width > maxWidth) {
+                        scaledWidth = maxWidth;
+                        scaledHeight = img.height * (maxWidth / img.width);
+                    }
+                    drawText(canvas, img, scaledWidth, scaledHeight);
                 });
             });
         });
