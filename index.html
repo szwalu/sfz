@@ -107,7 +107,336 @@
             gap: 15px;
         }
 
-        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            #container {
+                padding: 10px;
+            }
+
+            #graph {
+                grid-template-columns: 1fr;
+            }
+
+            .align-center-box {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .control-group {
+                flex-direction: row;
+                width: 100%;
+                margin-right: 0;
+            }
+
+            .control-group label, .format-group label {
+                font-size: 0.9rem;
+                min-width: 70px;
+            }
+
+            input[type=range] {
+                width: 150px;
+            }
+
+            button, select, input[type=file], input#text {
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .label {
+                min-width: 40px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            article {
+                font-size: 0.85rem;
+            }
+
+            .format-group {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            label {
+                font-size: 0.9rem;
+            }
+
+            .control-group label, .format-group label {
+                font-size: 0.8rem;
+                min-width: 60px;
+            }
+
+            button, select, input {
+                font-size: 0.9rem;
+            }
+
+            input[type=range] {
+                width: 120px;
+            }
+
+            canvas {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="container">
+    <h1>离线图片水印工具</h1>
+    <article>
+        安全地为你的图片加水印，无任何网络请求，利用浏览器 Api 实现水印，特别适合各种敏感证件（身份证，驾照，护照等）。
+        <a href="https://github.com/sleepybear1113/offline-picture-watermark" target="_blank">Github地址</a>
+    </article>
+
+    <div class="align-center-box">
+        <label for="image">第一步：先选择本地图片(可多选)</label>
+        <input type="file" id="image" autocomplete="off" multiple>
+        <label for="text">第二步：输入需要打水印的文字</label>
+        <input id="text" autocomplete="off" value="这里是水印文字">
+    </div>
+
+    <div class="align-center-box">
+        <div class="control-group">
+            <label for="color">颜色</label>
+            <input type="color" id="color" value="#FFFFFF">
+            <label class="label" id="label-color"></label>
+        </div>
+
+        <div class="control-group">
+            <label for="fontSelect">字体</label>
+            <select id="fontSelect"></select>
+        </div>
+
+        <div class="control-group">
+            <label for="bold">加粗</label>
+            <input type="checkbox" id="bold" checked>
+        </div>
+
+        <div class="control-group">
+            <label for="italic">斜体</label>
+            <input type="checkbox" id="italic">
+        </div>
+
+        <div class="control-group">
+            <label for="xx">交错</label>
+            <input type="checkbox" id="xx" checked>
+        </div>
+
+        <div class="control-group">
+            <label for="alpha">不透明度</label>
+            <input type="range" id="alpha" min="0" max="1" step="0.01" autocomplete="off" value="0.25">
+            <label class="label" id="label-alpha"></label>
+        </div>
+
+        <div class="control-group">
+            <label for="size">字号</label>
+            <input type="range" id="size" min="0.1" max="5" step="0.01" autocomplete="off" value="0.8">
+            <label class="label" id="label-size"></label>
+        </div>
+
+        <div class="control-group">
+            <label for="radio">角度</label>
+            <input type="range" id="radio" min="-180" max="180" step="1" autocomplete="off" value="-30">
+            <label class="label" id="label-radio"></label>
+        </div>
+
+        <div class="control-group">
+            <label for="marginHorizon">左右间隔</label>
+            <input type="range" id="marginHorizon" min="-5" max="12" step="0.1" autocomplete="off" value="1.5">
+            <label class="label" id="label-marginHorizon"></label>
+        </div>
+
+        <div class="control-group">
+            <label for="marginVertical">上下间隔</label>
+            <input type="range" id="marginVertical" min="-5" max="12" step="0.1" autocomplete="off" value="1.5">
+            <label class="label" id="label-marginVertical"></label>
+        </div>
+    </div>
+
+    <div class="align-center-box">
+        <label for="text">第三步：点击图片进行单个图片下载</label>
+        <button onclick="downloadAllPic()">下载全部</button>
+        <div class="format-group">
+            <label>
+                PNG格式
+                <input type="radio" value="image/png" name="pic-type" class="pic-type" checked>
+            </label>
+            <label>
+                JPEG格式
+                <input type="radio" value="image/jpeg" name="pic-type" class="pic-type">
+            </label>
+            <label>
+                Webp格式
+                <input type="radio" value="image/webp" name="pic-type" class="pic-type">
+            </label>
+        </div>
+        <span id="pic-quality-div" style="display: none">
+            <label for="pic-quality">图像质量</label>
+            <input type="range" id="pic-quality" min="1" max="100" step="1" autocomplete="off" value="92">
+            <label class="label" id="label-pic-quality"></label>
+        </span>
+    </div>
+
+    <p id="graph"></p>
+
+    <script>
+        let canvas;
+        let $ = sel => document.querySelector(sel);
+        let inputItems = ['color', 'alpha', "marginHorizon", "marginVertical", 'size', 'radio', "xx", "bold", "italic", "pic-quality"];
+        let configInputSetting = {};
+        let allCanvas = [];
+
+        let image = $('#image');
+        let graph = $('#graph');
+        let dataURItoBlob = (dataURI, type) => {
+            let i, _i, _ref;
+            let binStr = atob((dataURI.split(','))[1]);
+            let len = binStr.length;
+            let arr = new Uint8Array(len);
+            for (i = _i = 0, _ref = len - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
+                arr[i] = binStr.charCodeAt(i);
+            }
+            return new Blob([arr], {
+                type: type
+            });
+        };
+
+        const fontOptions = ["Arial", "Helvetica", "Times New Roman", "Courier New", "Verdana", "Georgia", "Impact", "Tahoma", "Palatino", "Garamond", "Bookman", "Comic Sans MS", "Century Gothic", "Arial Black", "Lucida Console",
+            "幼圆", "新宋体", "文泉驿微米黑", "微软正黑产生了问题，可能是由于以下原因之一：
+
+1. **语法错误导致渲染失败**：在 `drawText` 函数中，`getContext('Nascent()` 是一个明显的错误，应该是 `getContext('2d')`。这会导致 canvas 无法正确绘制水印，从而影响下载功能。
+2. **事件绑定问题**：如果 canvas 的点击事件未正确绑定，点击图片可能不会触发下载。
+3. **文件格式或浏览器兼容性**：下载功能依赖 `toDataURL` 和 `dataURItoBlob`，某些浏览器可能对特定格式（如 WebP）支持不佳。
+4. **DOM 操作问题**：动态添加的 canvas 可能未正确附加到 DOM 或事件监听器未触发。
+
+### 修正步骤
+以下是修复后的 `index.html`，主要针对 `drawText` 函数中的错误进行了修正，并确保点击下载功能正常工作。其他部分（HTML 结构、CSS 样式、JavaScript 逻辑）保持不变，以保留您要求的布局（控件和单选按钮在一行显示）。
+
+#### 主要更改：
+1. **修复 `drawText` 函数**：
+   - 将 `textCtx = canvas.getContext('Nascent()` 更正为 `textCtx = canvas.getContext('2d')`。
+2. **验证点击事件**：
+   - 确保 `readFile` 函数中的 `canvas.addEventListener('click', ...)` 正确绑定，调用 `downloadCanvasAsImage`。
+3. **保留所有其他功能**：
+   - 未修改 HTML 结构、CSS 或其他 JavaScript 逻辑，仅修复导致下载失效的错误。
+4. **测试下载逻辑**：
+   - 确认 `downloadCanvasAsImage` 使用 `toDataURL` 和 `dataURItoBlob` 正确生成下载链接。
+
+以下是完整的修复代码，使用相同的 artifact ID，因为这是对之前代码的修复。
+
+<xaiArtifact artifact_id="c30b0359-3454-4c0a-8e78-268352ddf7f6" artifact_version_id="0be3b06c-559f-4779-8a08-630bcf6cfc96" title="index.html" contentType="text/html">
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+    <title>离线图片水印工具</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+        }
+
+        #container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        #graph {
+            display: grid;
+            grid-gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        p, article {
+            margin: 0 0 1.5rem 0;
+        }
+
+        article {
+            font-size: 0.9rem;
+            color: #777;
+        }
+
+        .align-center-box {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 1rem;
+            gap: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-right: 20px;
+        }
+
+        label {
+            color: blue;
+            font-size: 1.1rem;
+            margin-right: 10px;
+        }
+
+        .control-group label, .format-group label {
+            color: black;
+            font-size: 1rem;
+            min-width: 80px;
+        }
+
+        input#text {
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 1rem;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+
+        input[type=range] {
+            width: 200px;
+            height: 18px;
+            vertical-align: middle;
+        }
+
+        input[type=color] {
+            width: 50px;
+            height: 30px;
+            padding: 0;
+        }
+
+        canvas {
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 100%;
+            border: 1px dashed #AAA;
+            cursor: pointer;
+        }
+
+        .label {
+            min-width: 50px;
+        }
+
+        button {
+            padding: 8px 16px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        select, input[type=file], input[type=checkbox], input[type=radio] {
+            font-size: 1rem;
+            padding: 5px;
+        }
+
+        .format-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
         @media (max-width: 768px) {
             #container {
                 padding: 10px;
@@ -369,8 +698,7 @@
         };
         const makeStyle = () => {
             let match = configInputSetting.color.value.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
-            return 'rgba(' + (parseInt(match[1], 16)) + ',' + (parseInt(match[2], 16)) + ',' + (parseInt(match[3],
-                16)) + ',' + configInputSetting.alpha.value + ')';
+            return 'rgba(' + (parseInt(match[1], 16)) + ',' + (parseInt(match[2], 16)) + ',' + (parseInt(match[3], 16)) + ',' + configInputSetting.alpha.value + ')';
         };
 
         const drawText = (canvas, img) => {
@@ -380,7 +708,7 @@
             }
 
             let textSize = configInputSetting.size.value * Math.max(15, (Math.min(canvas.width, canvas.height)) / 25);
-            let textCtx = canvas.getContext('Nascent();
+            let textCtx = canvas.getContext('2d');
             textCtx.fillStyle = makeStyle();
 
             textCtx.font = ($("#bold").checked ? "bold " : "") + ($("#italic").checked ? "italic " : "") + textSize + "px " + $("#fontSelect").value;
