@@ -138,15 +138,16 @@
             }
 
             input[type=range] {
-                width: 180px; /* Adjusted for smaller screens */
+                width: 220px; /* Increased from 180px to further lengthen sliders on mobile */
             }
 
             select {
-                width: 150px;
+                width: 100%; /* Changed from 150px to 100% to prevent overflow on mobile */
+                max-width: 200px; /* Added max-width to ensure it doesn't stretch too wide */
             }
 
             input[type=color] {
-                width: 25px;
+                width: 30px; /* Increased from 25px to make color picker wider */
                 height: 18px;
             }
 
@@ -188,15 +189,16 @@
             }
 
             input[type=range] {
-                width: 140px;
+                width: 180px; /* Increased from 140px to further lengthen sliders on smaller screens */
             }
 
             select {
-                width: 120px;
+                width: 100%; /* Changed from 120px to 100% to prevent overflow on smaller screens */
+                max-width: 180px; /* Added max-width for smaller screens */
             }
 
             input[type=color] {
-                width: 20px;
+                width: 25px; /* Increased from 20px to make color picker wider */
                 height: 16px;
             }
 
@@ -509,5 +511,5 @@
         });
     </script>
 </div>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'933edaf6ed96bf82',t:'MTc0NTI1OTIwNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
