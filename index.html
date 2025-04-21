@@ -5,66 +5,158 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
     <title>离线图片水印工具</title>
     <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+        }
+
+        #container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
         #graph {
             display: grid;
             grid-gap: 10px;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         }
 
-        p,
-        article {
-            margin: 0 0 20px 0
+        p, article {
+            margin: 0 0 1.5rem 0;
         }
 
         article {
-            font-size: 14px;
-            color: #777
+            font-size: 0.9rem;
+            color: #777;
         }
 
         .align-center-box {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 1rem;
+            gap: 10px;
         }
 
         label {
             color: blue;
-            font-size: 17px;
+            font-size: 1.1rem;
             margin-right: 10px;
         }
 
         p label {
             color: black;
-            display: inline-block;
-            font-size: 15px
+            font-size: 1rem;
+            min-width: 80px;
         }
 
         input#text {
             width: 100%;
             box-sizing: border-box;
-            font-size: 16px;
-            margin-bottom: 10px
+            font-size: 1rem;
+            padding: 8px;
+            margin-bottom: 10px;
         }
 
         input[type=range] {
-            min-width: 200px;
+            width: 100%;
+            max-width: 300px;
             height: 18px;
-            vertical-align: text-bottom;
-            flex: 1;
+            vertical-align: middle;
         }
 
         canvas {
             box-sizing: border-box;
             width: 100%;
+            max-width: 100%;
             border: 1px dashed #AAA;
-            cursor: pointer
+            cursor: pointer;
         }
 
         .label {
-            margin-right: 30px;
+            margin-right: 1rem;
+            min-width: 50px;
+        }
+
+        button {
+            padding: 8px 16px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        select, input[type=file], input[type=checkbox], input[type=radio] {
+            font-size: 1rem;
+            padding: 5px;
+        }
+
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            #container {
+                padding: 10px;
+            }
+
+            #graph {
+                grid-template-columns: 1fr;
+            }
+
+            .align-center-box {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            label {
+                font-size: 1rem;
+                margin-bottom: 5px;
+            }
+
+            p label {
+                font-size: 0.9rem;
+                min-width: auto;
+            }
+
+            input[type=range] {
+                max-width: 100%;
+            }
+
+            button, select, input[type=file], input#text {
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .label {
+                min-width: 40px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            article {
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            label {
+                font-size: 0.9rem;
+            }
+
+            p label {
+                font-size: 0.8rem;
+            }
+
+            button, select, input {
+                font-size: 0.9rem;
+            }
+
+            canvas {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
+<body>
 <div id="container">
     <h1>离线图片水印工具</h1>
     <article>
@@ -75,43 +167,34 @@
     <div class="align-center-box">
         <label for="image">第一步：先选择本地图片(可多选)</label>
         <input type="file" id="image" autocomplete="off" multiple>
-        <br>
         <label for="text">第二步：输入需要打水印的文字</label>
-        <input style="flex: 1; margin-bottom: 0" id="text" autocomplete="off" value="这里是水印文字">
+        <input id="text" autocomplete="off" value="这里是水印文字">
     </div>
 
     <p class="align-center-box">
         <label for="color">颜色</label>
-        <input style="min-width: 30px; max-width: 100px" type="color" id="color" value="#FFFFFF">
+        <input type="color" id="color" value="#FFFFFF">
         <label class="label" id="label-color"></label>
 
-        <br>
         <label for="fontSelect">字体</label>
-        <select style="margin-right: 30px" id="fontSelect">
-        </select>
+        <select id="fontSelect"></select>
 
-        <br>
         <label for="bold">加粗</label>
-        <input type="checkbox" style="margin-right: 30px" id="bold" checked>
+        <input type="checkbox" id="bold" checked>
 
-        <br>
         <label for="italic">斜体</label>
-        <input type="checkbox" style="margin-right: 30px" id="italic">
+        <input type="checkbox" id="italic">
 
-        <br>
         <label for="xx">交错</label>
-        <input type="checkbox" style="margin-right: 30px" id="xx" checked>
+        <input type="checkbox" id="xx" checked>
 
-        <br>
         <label for="alpha">不透明度</label>
         <input type="range" id="alpha" min="0" max="1" step="0.01" autocomplete="off" value="0.25">
         <label class="label" id="label-alpha"></label>
 
-        <br>
         <label for="size">字号</label>
         <input type="range" id="size" min="0.1" max="5" step="0.01" autocomplete="off" value="0.8">
         <label class="label" id="label-size"></label>
-
     </p>
 
     <p class="align-center-box">
@@ -119,18 +202,16 @@
         <input type="range" id="radio" min="-180" max="180" step="1" autocomplete="off" value="-30">
         <label class="label" id="label-radio"></label>
 
-        <br>
         <label for="marginHorizon">左右间隔</label>
         <input type="range" id="marginHorizon" min="-5" max="12" step="0.1" autocomplete="off" value="1.5">
         <label class="label" id="label-marginHorizon"></label>
 
-        <br>
         <label for="marginVertical">上下间隔</label>
         <input type="range" id="marginVertical" min="-5" max="12" step="0.1" autocomplete="off" value="1.5">
         <label class="label" id="label-marginVertical"></label>
     </p>
 
-    <div>
+    <div class="align-center-box">
         <label for="text">第三步：点击图片进行单个图片下载</label>
         <button onclick="downloadAllPic()">下载全部</button>
         <label>
@@ -159,8 +240,8 @@
         let canvas;
         let $ = sel => document.querySelector(sel);
         let inputItems = ['color', 'alpha', "marginHorizon", "marginVertical", 'size', 'radio', "xx", "bold", "italic", "pic-quality"];
-        let configInputSetting = {}; // 保存所有水印
-        let allCanvas = []; // 保存所有的canvas
+        let configInputSetting = {};
+        let allCanvas = [];
 
         let image = $('#image');
         let graph = $('#graph');
@@ -178,9 +259,8 @@
         };
 
         const fontOptions = ["Arial", "Helvetica", "Times New Roman", "Courier New", "Verdana", "Georgia", "Impact", "Tahoma", "Palatino", "Garamond", "Bookman", "Comic Sans MS", "Century Gothic", "Arial Black", "Lucida Console",
-            "幼圆", "新宋体", "文泉驿微米黑", "微软正黑体", "微软雅黑", "宋体", "思源宋体", "思源黑体", "苹方", "隶书", "楷体", "开源字体", "华文中宋", "华文中宋", "华文行楷", "华文行楷", "华文新魏", "华文新魏", "华文细黑", "华文宋体", "华文宋体", "华文隶书", "华文隶书", "华文楷体", "华文楷体", "华文琥珀", "华文琥珀", "华文黑体", "华文仿宋", "华文仿宋", "华文彩云", "黑体", "汉仪雅酷黑W", "汉仪小麦体", "汉仪尚魏手书W", "汉仪旗黑", "汉仪旗黑", "汉仪旗黑", "汉仪乐喵体简", "汉仪楷体", "汉仪家书简", "汉仪黑荔枝", "汉仪大宋简", "汉仪大黑简", "汉仪程行体", "汉仪PP体简", "仿宋",];
+            "幼圆", "新宋体", "文泉驿微米黑", "微软正黑体", "微软雅黑", "宋体", "思源宋体", "思源黑体", "苹方", "隶书", "楷体", "开源字体", "华文中宋", "华文行楷", "华文新魏", "华文细黑", "华文宋体", "华文隶书", "华文楷体", "华文琥珀", "华文黑体", "华文仿宋", "华文彩云", "黑体", "汉仪雅酷黑W", "汉仪小麦体", "汉仪尚魏手书W", "汉仪旗黑", "汉仪乐喵体简", "汉仪楷体", "汉仪家书简", "汉仪黑荔枝", "汉仪大宋简", "汉仪大黑简", "汉仪程行体", "汉仪PP体简", "仿宋"];
         const selectElement = $("#fontSelect");
-        // 遍历字体选项数组
         for (let i = 0; i < fontOptions.length; i++) {
             const optionElement = document.createElement("option");
             optionElement.value = fontOptions[i];
@@ -190,7 +270,6 @@
         }
 
         const redrawCanvas = (canvas, img) => {
-            // 重新设置canvas的宽高，会清空画布
             let w = canvas.width;
             let h = canvas.height;
             canvas.width = w;
@@ -295,7 +374,6 @@
         }
 
         image.addEventListener('change', function () {
-            // 处理批量图片
             const batchFileHandler = file => {
                 const type = file.type;
                 if (!['image/png', 'image/jpeg', 'image/webp'].includes(type)) {
@@ -330,4 +408,5 @@
         });
     </script>
 </div>
+</body>
 </html>
